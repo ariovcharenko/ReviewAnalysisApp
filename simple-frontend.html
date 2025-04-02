@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Review Analysis App - Simple Frontend</title>
+    <title>Smartphone Review Analysis App - Simple Frontend</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -170,8 +170,8 @@
     </style>
 </head>
 <body>
-    <h1>Review Analysis App</h1>
-    <p>A simple frontend to interact with the Review Analysis API</p>
+    <h1>Smartphone Review Analysis App</h1>
+    <p>A simple frontend to analyze smartphone reviews and extract sentiment about key aspects like battery life, screen quality, camera quality, performance, sound quality, charging speed, overheating, and build quality.</p>
     
     <div class="container">
         <div class="card" id="review-details-card" style="display: none;">
@@ -209,7 +209,7 @@
                 <div id="upload-message" class="success-message" style="display: none;">File successfully uploaded and is being analyzed.</div>
             </div>
             
-            <button id="submit-review">Submit Review</button>
+            <button id="submit-review" style="background-color: #2ecc71;">Submit Review</button>
         </div>
         
         <div class="card">
@@ -426,34 +426,139 @@
             const aspects = [];
             const textLower = text.toLowerCase();
             
-            // Check for common product aspects
+            // Check for smartphone-specific aspects
             const commonAspects = [
-                { term: 'battery', name: 'Battery Life' },
-                { term: 'screen', name: 'Screen Quality' },
-                { term: 'camera', name: 'Camera Quality' },
-                { term: 'price', name: 'Price' },
-                { term: 'design', name: 'Design' },
-                { term: 'performance', name: 'Performance' },
-                { term: 'sound', name: 'Sound Quality' },
-                { term: 'delivery', name: 'Delivery' },
-                { term: 'customer service', name: 'Customer Service' },
-                { term: 'charging', name: 'Charging Speed' },
-                { term: 'comfort', name: 'Comfort' },
-                { term: 'build quality', name: 'Build Quality' },
-                { term: 'durability', name: 'Durability' },
-                { term: 'overheating', name: 'Temperature Management' }
+                { term: 'battery', name: 'Battery Life', related: ['battery life', 'charge', 'power', 'last', 'lasts', 'lasting'] },
+                { term: 'screen', name: 'Screen Quality', related: ['display', 'resolution', 'brightness', 'sunlight', 'scratch'] },
+                { term: 'camera', name: 'Camera Quality', related: ['photo', 'picture', 'image', 'selfie', 'lens', 'zoom', 'low light'] },
+                { term: 'performance', name: 'Performance', related: ['speed', 'fast', 'slow', 'lag', 'responsive', 'snappy', 'smooth', 'processor', 'cpu', 'apps'] },
+                { term: 'sound', name: 'Sound Quality', related: ['speaker', 'audio', 'volume', 'loud', 'music', 'headphone', 'bass'] },
+                { term: 'charging', name: 'Charging Speed', related: ['charger', 'fast charging', 'quick charge', 'power delivery', 'usb-c'] },
+                { term: 'overheat', name: 'Overheating', related: ['hot', 'heat', 'temperature', 'warm', 'thermal', 'cooling'] },
+                { term: 'build quality', name: 'Build Quality', related: ['build', 'premium', 'design', 'material', 'feel', 'weight', 'heavy', 'light', 'plastic', 'metal', 'glass'] }
             ];
             
-            commonAspects.forEach(aspect => {
-                if (textLower.includes(aspect.term)) {
-                    // Simple sentiment analysis based on surrounding words
+            // Enhanced positive and negative word lists
+            const positiveWords = [
+                'good', 'great', 'excellent', 'amazing', 'love', 'best', 'nice', 'perfect', 'fantastic',
+                'impressive', 'incredible', 'outstanding', 'superb', 'brilliant', 'awesome', 'wonderful',
+                'exceptional', 'superior', 'terrific', 'solid', 'reliable', 'quality', 'premium', 'fast',
+                'quick', 'responsive', 'smooth', 'clear', 'crisp', 'bright', 'sharp', 'beautiful', 'impressed',
+                'satisfied', 'happy', 'pleased', 'recommend', 'worth', 'value', 'efficient', 'powerful',
+                'convenient', 'easy', 'comfortable', 'durable', 'sturdy', 'robust', 'long-lasting'
+            ];
+            
+            const negativeWords = [
+                'bad', 'poor', 'terrible', 'awful', 'worst', 'disappointing', 'slow', 'cheap', 'horrible',
+                'mediocre', 'subpar', 'inadequate', 'inferior', 'weak', 'frustrating', 'annoying', 'useless',
+                'waste', 'regret', 'avoid', 'problem', 'issue', 'defect', 'flaw', 'broken', 'fails', 'failure',
+                'struggles', 'laggy', 'lag', 'sluggish', 'unresponsive', 'blurry', 'grainy', 'dim', 'dull',
+                'uncomfortable', 'difficult', 'hard', 'heavy', 'bulky', 'fragile', 'flimsy', 'cheap',
+                'overpriced', 'expensive', 'not worth', 'disappointed', 'unhappy', 'dissatisfied', 'complaint',
+                'expected better', 'not the best', 'could be better', 'not impressed', 'drains', 'hot', 'overheats'
+            ];
+            
+            // Context-based phrases that imply sentiment
+            const contextPhrases = [
+                { phrase: 'all day', aspect: 'Battery Life', sentiment: 'Positive' },
+                { phrase: 'lasts all day', aspect: 'Battery Life', sentiment: 'Positive' },
+                { phrase: 'long battery', aspect: 'Battery Life', sentiment: 'Positive' },
+                { phrase: 'battery drain', aspect: 'Battery Life', sentiment: 'Negative' },
+                { phrase: 'drains quickly', aspect: 'Battery Life', sentiment: 'Negative' },
+                { phrase: 'drains fast', aspect: 'Battery Life', sentiment: 'Negative' },
+                { phrase: 'charge twice', aspect: 'Battery Life', sentiment: 'Negative' },
+                { phrase: 'have to charge', aspect: 'Battery Life', sentiment: 'Negative' },
+                { phrase: 'bright and clear', aspect: 'Screen Quality', sentiment: 'Positive' },
+                { phrase: 'scratches easily', aspect: 'Screen Quality', sentiment: 'Negative' },
+                { phrase: 'under direct sunlight', aspect: 'Screen Quality', sentiment: 'Positive' },
+                { phrase: 'low light', aspect: 'Camera Quality', sentiment: 'Negative' },
+                { phrase: 'blurry', aspect: 'Camera Quality', sentiment: 'Negative' },
+                { phrase: 'not the best', aspect: null, sentiment: 'Negative' },
+                { phrase: 'not up to par', aspect: null, sentiment: 'Negative' },
+                { phrase: 'fast and responsive', aspect: 'Performance', sentiment: 'Positive' },
+                { phrase: 'no lag', aspect: 'Performance', sentiment: 'Positive' },
+                { phrase: 'haven\'t experienced any lag', aspect: 'Performance', sentiment: 'Positive' },
+                { phrase: 'apps open quickly', aspect: 'Performance', sentiment: 'Positive' },
+                { phrase: 'takes longer', aspect: 'Charging Speed', sentiment: 'Negative' },
+                { phrase: 'too long to', aspect: 'Charging Speed', sentiment: 'Negative' },
+                { phrase: 'not happy with', aspect: null, sentiment: 'Negative' },
+                { phrase: 'gets hot', aspect: 'Overheating', sentiment: 'Negative' },
+                { phrase: 'overheats', aspect: 'Overheating', sentiment: 'Negative' },
+                { phrase: 'feels premium', aspect: 'Build Quality', sentiment: 'Positive' },
+                { phrase: 'disappointed with', aspect: null, sentiment: 'Negative' },
+                { phrase: 'impressed', aspect: null, sentiment: 'Positive' }
+            ];
+            
+            // First, check for context phrases
+            const detectedAspects = new Map();
+            
+            // Check for context phrases first
+            contextPhrases.forEach(({ phrase, aspect, sentiment }) => {
+                if (textLower.includes(phrase)) {
+                    // If the phrase is associated with a specific aspect
+                    if (aspect) {
+                        detectedAspects.set(aspect, sentiment);
+                    } else {
+                        // Find which aspect this phrase is closest to
+                        let closestAspect = null;
+                        let minDistance = Infinity;
+                        
+                        const phraseIndex = textLower.indexOf(phrase);
+                        
+                        commonAspects.forEach(aspectObj => {
+                            // Check the main term and related terms
+                            const allTerms = [aspectObj.term, ...aspectObj.related];
+                            
+                            for (const term of allTerms) {
+                                if (textLower.includes(term)) {
+                                    const termIndex = textLower.indexOf(term);
+                                    const distance = Math.abs(termIndex - phraseIndex);
+                                    
+                                    if (distance < minDistance) {
+                                        minDistance = distance;
+                                        closestAspect = aspectObj.name;
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // If we found a close aspect and it's within a reasonable distance (100 chars)
+                        if (closestAspect && minDistance < 100) {
+                            detectedAspects.set(closestAspect, sentiment);
+                        }
+                    }
+                }
+            });
+            
+            // Then check for specific aspects
+            commonAspects.forEach(aspectObj => {
+                // Check for the main term and related terms
+                const allTerms = [aspectObj.term, ...aspectObj.related];
+                let found = false;
+                let termFound = '';
+                
+                for (const term of allTerms) {
+                    if (textLower.includes(term)) {
+                        found = true;
+                        termFound = term;
+                        break;
+                    }
+                }
+                
+                if (found) {
+                    // If we already detected this aspect from context phrases, skip
+                    if (detectedAspects.has(aspectObj.name)) {
+                        return;
+                    }
+                    
+                    // Advanced sentiment analysis based on surrounding words
                     let sentiment = 'Neutral';
-                    const index = textLower.indexOf(aspect.term);
-                    const surroundingText = textLower.substring(Math.max(0, index - 20), Math.min(textLower.length, index + 30));
+                    const index = textLower.indexOf(termFound);
                     
-                    const positiveWords = ['good', 'great', 'excellent', 'amazing', 'love', 'best', 'nice', 'perfect'];
-                    const negativeWords = ['bad', 'poor', 'terrible', 'awful', 'worst', 'disappointing', 'slow', 'cheap'];
+                    // Get a larger context window
+                    const surroundingText = textLower.substring(Math.max(0, index - 50), Math.min(textLower.length, index + 50));
                     
+                    // Check for positive words
                     for (const word of positiveWords) {
                         if (surroundingText.includes(word)) {
                             sentiment = 'Positive';
@@ -461,6 +566,7 @@
                         }
                     }
                     
+                    // Check for negative words if still neutral
                     if (sentiment === 'Neutral') {
                         for (const word of negativeWords) {
                             if (surroundingText.includes(word)) {
@@ -470,11 +576,25 @@
                         }
                     }
                     
-                    aspects.push({
-                        name: aspect.name,
-                        sentiment: sentiment
-                    });
+                    // Special case for "not" + positive word = negative
+                    if (sentiment === 'Positive') {
+                        const words = surroundingText.split(/\s+/);
+                        for (let i = 0; i < words.length - 1; i++) {
+                            if (words[i] === 'not' && positiveWords.includes(words[i + 1])) {
+                                sentiment = 'Negative';
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Add to detected aspects
+                    detectedAspects.set(aspectObj.name, sentiment);
                 }
+            });
+            
+            // Convert Map to array of objects
+            detectedAspects.forEach((sentiment, name) => {
+                aspects.push({ name, sentiment });
             });
             
             return aspects;
