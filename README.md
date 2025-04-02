@@ -22,8 +22,9 @@ A web application for analyzing product reviews with sentiment analysis and aspe
 
 ### Prerequisites
 
-- Node.js (for the backend server)
-- Modern web browser
+- Python 3.8 or higher
+- Modern web browser (Chrome, Firefox, Edge, etc.)
+- Git Bash (for Windows users)
 
 ### Installation
 
@@ -33,59 +34,161 @@ A web application for analyzing product reviews with sentiment analysis and aspe
    cd ReviewAnalysisApp
    ```
 
-2. Start the backend server:
+## Frontend Setup
+
+There are two ways to run the frontend:
+
+### Option 1: Using a Local Web Server (Recommended)
+
+This method is recommended as it ensures proper functionality of the application.
+
+1. Open Git Bash or your terminal and navigate to the ReviewAnalysisApp directory:
+   ```bash
+   cd /path/to/ReviewAnalysisApp
    ```
-   cd backend
-   npm install
-   npm start
+
+2. Start a local web server:
+   ```bash
+   python -m http.server 8080
    ```
-   The backend server will run on http://localhost:3000
 
-3. Open the frontend:
-   - You can simply open `simple-frontend.html` in your browser
-   - Or serve it using a local server:
-     ```
-     cd ..
-     python -m http.server 8080
-     ```
-     Then visit http://localhost:8080/simple-frontend.html
+3. Open your browser and navigate to:
+   ```
+   http://localhost:8080/simple-frontend.html
+   ```
 
-## Usage
+### Option 2: Opening the HTML File Directly
 
-### Adding a Review
+**Note**: This method may not work properly due to browser security restrictions when making API calls.
 
-1. Enter your review text in the text area
-2. Select a star rating (1-5 stars)
-3. Click "Submit Review"
+1. Right-click on `simple-frontend.html` in your file explorer
+2. Select "Open with" and choose your preferred browser
 
-### Uploading Reviews in Batch
+If you see only raw HTML or the page doesn't function correctly, please use Option 1 instead.
 
-1. Prepare a CSV or TXT file with your reviews
-2. Click "Choose File" and select your file
-3. Click "Upload and Analyze"
-4. Wait for the success message
+## Backend Setup
 
-### Viewing Review Analysis
+There are two backend options available:
 
-1. All reviews are displayed in the "Reviews" section
-2. Click "View Full Details" on any review to see:
-   - Overall sentiment analysis
-   - Aspect-based sentiment breakdown
-   - Complete review text and rating
+### Option 1: Simple Backend (Recommended for Beginners)
 
-## Implementation Details
+1. Open Git Bash or your terminal and navigate to the ReviewAnalysisApp directory:
+   ```bash
+   cd /path/to/ReviewAnalysisApp
+   ```
 
-### Frontend
+2. Create a Python virtual environment:
+   ```bash
+   # For Windows (Git Bash)
+   python -m venv venv
+   source venv/Scripts/activate
+   
+   # For macOS/Linux
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
 
-- Pure HTML, CSS, and JavaScript
-- No external libraries or frameworks
-- Responsive design for all device sizes
+3. Install the required packages:
+   ```bash
+   pip install fastapi uvicorn pydantic sqlite3
+   ```
 
-### Backend
+4. Run the simple backend:
+   ```bash
+   python simple-backend.py
+   ```
+   
+   The backend will run on http://localhost:8000
 
-- RESTful API for review management
-- Sentiment analysis using natural language processing
-- Aspect extraction for detailed product feedback
+### Option 2: Full-Featured Backend
+
+1. Open Git Bash or your terminal and navigate to the backend directory:
+   ```bash
+   cd /path/to/ReviewAnalysisApp/backend
+   ```
+
+2. Create a Python virtual environment:
+   ```bash
+   # For Windows (Git Bash)
+   python -m venv venv
+   source venv/Scripts/activate
+   
+   # For macOS/Linux
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. Install the required packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Install spaCy language model:
+   ```bash
+   python -m spacy download en_core_web_sm
+   ```
+
+5. Run the backend:
+   ```bash
+   python run.py
+   ```
+   
+   The backend will run on http://localhost:8000
+
+## Connecting Frontend to Backend
+
+By default, the frontend is configured to connect to a backend at http://localhost:3000/api, but our Python backend runs on port 8000. You need to modify the frontend to connect to the correct port:
+
+1. Open `simple-frontend.html` in a text editor
+2. Find the line that says:
+   ```javascript
+   const API_URL = 'http://localhost:3000/api';
+   ```
+3. Change it to:
+   ```javascript
+   const API_URL = 'http://localhost:8000/api';
+   ```
+4. Save the file and refresh your browser
+
+## Troubleshooting
+
+### Frontend Issues
+
+1. **Page shows only raw HTML code**:
+   - Make sure you're using a local web server (Option 1 in Frontend Setup)
+   - Check that you're accessing the correct URL (http://localhost:8080/simple-frontend.html)
+
+2. **Cannot connect to backend**:
+   - Ensure the backend is running (check terminal for any error messages)
+   - Verify that the API_URL in simple-frontend.html matches your backend port
+   - Check browser console (F12) for any error messages
+
+### Backend Issues
+
+1. **Virtual environment creates in wrong location**:
+   - If using Git Bash on Windows and venv creates in C:\Program Files\Git\venv:
+     - Use the full path: `python -m venv /c/Users/YourUsername/path/to/ReviewAnalysisApp/venv`
+     - Or use Windows Command Prompt instead of Git Bash
+
+2. **Activation script not found**:
+   - Ensure you're using the correct path:
+     - Windows: `source venv/Scripts/activate`
+     - macOS/Linux: `source venv/bin/activate`
+
+3. **spaCy installation errors**:
+   - Try installing with: `pip install spacy==3.7.2`
+   - Then download the language model: `python -m spacy download en_core_web_sm`
+
+4. **Permission errors when running scripts**:
+   - Ensure you have the necessary permissions to execute the files
+   - Try running with elevated privileges if necessary
+
+## Port Usage
+
+- **Frontend**: Served on port 8080 using Python's built-in HTTP server
+- **Backend**: Runs on port 8000 using Uvicorn (FastAPI)
+
+The frontend communicates with the backend by making API requests to http://localhost:8000/api endpoints.
 
 ## License
 
