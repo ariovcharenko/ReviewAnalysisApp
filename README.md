@@ -22,7 +22,7 @@ A web application for analyzing product reviews with sentiment analysis and aspe
 
 ### Prerequisites
 
-- Node.js (for the backend server)
+- Python 3.9+ (for the backend server)
 - Modern web browser
 
 ### Installation
@@ -34,12 +34,23 @@ A web application for analyzing product reviews with sentiment analysis and aspe
    ```
 
 2. Start the backend server:
+
+   **Option 1: Using the Simple Backend (Recommended for Testing)**
+   ```
+   python simple-backend.py
+   ```
+   
+   **Option 2: Using the Full Backend**
    ```
    cd backend
-   npm install
-   npm start
+   python -m venv venv
+   venv\Scripts\activate  # On Windows
+   pip install -r requirements.txt
+   python -m spacy download en_core_web_sm
+   python run.py
    ```
-   The backend server will run on http://localhost:3000
+   
+   The backend server will run on http://localhost:8000
 
 3. Open the frontend:
    - You can simply open `simple-frontend.html` in your browser
@@ -49,6 +60,8 @@ A web application for analyzing product reviews with sentiment analysis and aspe
      python -m http.server 8080
      ```
      Then visit http://localhost:8080/simple-frontend.html
+   
+   **Note:** The frontend is configured to connect to http://localhost:3000/api by default. If you're running the backend on port 8000, you'll need to modify the API_URL in simple-frontend.html to 'http://localhost:8000/api'.
 
 ## Usage
 
@@ -83,9 +96,10 @@ A web application for analyzing product reviews with sentiment analysis and aspe
 
 ### Backend
 
-- RESTful API for review management
-- Sentiment analysis using natural language processing
-- Aspect extraction for detailed product feedback
+- Python-based RESTful API using FastAPI
+- Sentiment analysis using BERT and natural language processing
+- Aspect extraction using SpaCy for detailed product feedback
+- SQLite database for storing reviews and analysis results
 
 ## License
 
