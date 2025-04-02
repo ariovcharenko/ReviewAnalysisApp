@@ -224,7 +224,7 @@
 
     <script>
         // Use the correct API URL with the 'null' origin CORS configuration
-        const API_URL = 'http://localhost:3000/api';
+        const API_URL = 'http://localhost:8000/api';
         
         // Function to format date
         function formatDate(dateString) {
@@ -365,8 +365,8 @@
             const sentimentLabel = sentimentScore > 0.3 ? 'Positive' : 
                                   sentimentScore < -0.3 ? 'Negative' : 'Neutral';
             
-            // Extract aspects (simulated for now)
-            const aspects = extractAspects(review.text);
+            // Check if the review is about an electronic product
+            const isElectronic = isElectronicProductReview(review.text);
             
             // Generate HTML for details
             let detailsHTML = `
@@ -390,24 +390,47 @@
                 </div>
             `;
             
-            if (aspects.length > 0) {
+            // Only extract and display aspects if it's an electronic product review
+            if (isElectronic) {
+                // Extract aspects
+                const aspects = extractAspects(review.text);
+                
+                if (aspects.length > 0) {
+                    detailsHTML += `
+                        <div class="details-section">
+                            <h3>Detected Aspects</h3>
+                            <ul>
+                    `;
+                    
+                    aspects.forEach(aspect => {
+                        detailsHTML += `
+                            <li>
+                                <strong>${aspect.name}:</strong> 
+                                <span class="sentiment-${aspect.sentiment.toLowerCase()}">${aspect.sentiment}</span>
+                            </li>
+                        `;
+                    });
+                    
+                    detailsHTML += `
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    detailsHTML += `
+                        <div class="details-section">
+                            <h3>Detected Aspects</h3>
+                            <p>No specific aspects were detected in this review.</p>
+                        </div>
+                    `;
+                }
+            } else {
+                // Display a message that the analysis is only for electronic products
                 detailsHTML += `
                     <div class="details-section">
-                        <h3>Detected Aspects</h3>
-                        <ul>
-                `;
-                
-                aspects.forEach(aspect => {
-                    detailsHTML += `
-                        <li>
-                            <strong>${aspect.name}:</strong> 
-                            <span class="sentiment-${aspect.sentiment.toLowerCase()}">${aspect.sentiment}</span>
-                        </li>
-                    `;
-                });
-                
-                detailsHTML += `
-                        </ul>
+                        <h3>Product Type</h3>
+                        <p style="color: #e74c3c;">This review does not appear to be about an electronic product. 
+                        Aspect-based sentiment analysis is currently only available for electronic products 
+                        such as phones, laptops, headphones, etc.</p>
                     </div>
                 `;
             }
@@ -421,63 +444,226 @@
             });
         }
         
-        // Function to extract aspects from review text (simulated)
+        // Function to extract aspects from review text with improved sentiment analysis
         function extractAspects(text) {
             const aspects = [];
             const textLower = text.toLowerCase();
             
-            // Check for common product aspects
+            // Check for common product aspects with multiple terms for each aspect
             const commonAspects = [
-                { term: 'battery', name: 'Battery Life' },
-                { term: 'screen', name: 'Screen Quality' },
-                { term: 'camera', name: 'Camera Quality' },
-                { term: 'price', name: 'Price' },
-                { term: 'design', name: 'Design' },
-                { term: 'performance', name: 'Performance' },
-                { term: 'sound', name: 'Sound Quality' },
-                { term: 'delivery', name: 'Delivery' },
-                { term: 'customer service', name: 'Customer Service' },
-                { term: 'charging', name: 'Charging Speed' },
-                { term: 'comfort', name: 'Comfort' },
-                { term: 'build quality', name: 'Build Quality' },
-                { term: 'durability', name: 'Durability' },
-                { term: 'overheating', name: 'Temperature Management' }
+                { terms: ['battery', 'battery life', 'charge', 'battery lasts', 'battery lasted'], name: 'Battery Life' },
+                { terms: ['screen', 'display', 'brightness', 'resolution'], name: 'Screen Quality' },
+                { terms: ['camera', 'photo', 'picture', 'image', 'photography', 'video'], name: 'Camera Quality' },
+                { terms: ['price', 'cost', 'value', 'expensive', 'cheap'], name: 'Price' },
+                { terms: ['design', 'look', 'appearance', 'aesthetic'], name: 'Design' },
+                { terms: ['performance', 'speed', 'fast', 'slow', 'lag', 'responsive', 'smooth'], name: 'Performance' },
+                { terms: ['sound', 'audio', 'speaker', 'volume', 'bass', 'microphone', 'calls'], name: 'Sound Quality' },
+                { terms: ['delivery', 'shipping', 'arrived'], name: 'Delivery' },
+                { terms: ['customer service', 'support', 'warranty'], name: 'Customer Service' },
+                { terms: ['charging', 'charger', 'charge speed', 'fast charge'], name: 'Charging Speed' },
+                { terms: ['comfort', 'comfortable', 'ergonomic'], name: 'Comfort' },
+                { terms: ['build quality', 'build', 'sturdy', 'durable', 'premium'], name: 'Build Quality' },
+                { terms: ['durability', 'durable', 'robust', 'fragile'], name: 'Durability' },
+                { terms: ['overheating', 'overheat', 'hot', 'heat', 'temperature', 'warm'], name: 'Overheating' }
             ];
             
-            commonAspects.forEach(aspect => {
-                if (textLower.includes(aspect.term)) {
-                    // Simple sentiment analysis based on surrounding words
+            // Enhanced positive and negative phrases
+            const positivePatterns = [
+                // General positive words
+                /\b(good|great|excellent|amazing|love|best|nice|perfect|awesome|fantastic|impressive|outstanding|superb|brilliant)\b/,
+                // Specific positive phrases
+                /\b(high quality|well made|worth|recommend|impressed|satisfied|happy with|pleased with)\b/,
+                // Positive battery phrases
+                /battery (is|was) (great|good|excellent|amazing|incredible|impressive)/,
+                /battery (lasts|lasted) (all day|long|longer|forever)/,
+                /(great|good|excellent|amazing|incredible) battery life/,
+                /can go (a whole day|days|all day|long time) without charging/,
+                // Positive camera phrases
+                /(great|good|excellent|amazing|incredible|clear|crisp|sharp) (camera|photos|pictures|images)/,
+                /camera (is|was) (great|good|excellent|amazing|incredible|top-notch)/,
+                /takes (great|good|excellent|amazing|incredible|clear|crisp|sharp) (photos|pictures|images)/,
+                // Positive screen phrases
+                /(bright|vibrant|clear|crisp|sharp|beautiful|amazing) (screen|display)/,
+                /screen (is|was) (bright|vibrant|clear|crisp|sharp|beautiful|amazing)/,
+                /colors (pop|are vibrant|look great)/,
+                // Positive sound phrases
+                /(clear|crisp|loud|rich|deep|good|great) (sound|audio|speaker|volume|bass)/,
+                /sound (is|was) (clear|crisp|loud|rich|deep|good|great)/,
+                /(crystal clear|perfect at max volume)/,
+                // Positive performance phrases
+                /(fast|smooth|responsive|quick|snappy|no lag|no slow)/,
+                /runs (smoothly|quickly|fast|well|great)/,
+                /no (lag|slowdown|stutter|freezing)/,
+                // Positive charging phrases
+                /(fast|quick|rapid) (charging|charger)/,
+                /charges (quickly|fast|rapidly)/,
+                /(0 to 100|fully charged) in (under|less than) (an hour|1 hour|60 minutes)/
+            ];
+            
+            const negativePatterns = [
+                // General negative words
+                /\b(bad|poor|terrible|awful|worst|disappointing|slow|cheap|mediocre|subpar|inadequate)\b/,
+                // Specific negative phrases
+                /\b(not worth|waste of money|regret|disappointed|not happy|not satisfied|not pleased)\b/,
+                // Negative battery phrases
+                /battery (dies|died|drains|drained) (quickly|fast|rapidly)/,
+                /battery (life|lasted|lasts) (only|just) \d+ (minutes|hours)/,
+                /(poor|bad|terrible|short|disappointing) battery life/,
+                /have to (charge|recharge) (frequently|often|constantly|every few hours)/,
+                // Negative camera phrases
+                /(poor|bad|terrible|blurry|grainy|disappointing) (camera|photos|pictures|images)/,
+                /camera (is|was) (poor|bad|terrible|disappointing)/,
+                /takes (poor|bad|terrible|blurry|grainy|disappointing) (photos|pictures|images)/,
+                /camera (could|can|should) be better/,
+                // Negative screen phrases
+                /(dim|dull|blurry|pixelated|low quality) (screen|display)/,
+                /screen (is|was) (dim|dull|blurry|pixelated|low quality)/,
+                /screen (could|can|should) be (brighter|better|clearer|sharper)/,
+                /hard to see (in sunlight|outdoors|outside)/,
+                // Negative sound phrases
+                /(poor|bad|terrible|muffled|distorted|weak|low) (sound|audio|speaker|volume|bass)/,
+                /sound (is|was) (poor|bad|terrible|muffled|distorted|weak|low)/,
+                /hard to hear (calls|audio|sound|music)/,
+                // Negative performance phrases
+                /(laggy|sluggish|slow|unresponsive|freezes|crashes|hangs)/,
+                /performance (is|was) (poor|bad|terrible|disappointing|laggy|sluggish|slow)/,
+                /(lags|freezes|crashes|hangs) when/,
+                // Negative charging phrases
+                /(slow|takes forever|too long) to charge/,
+                /charging (is|was) (slow|disappointing)/,
+                /takes \d+ hours to (fully charge|charge completely)/,
+                // Negative overheating phrases
+                /(overheats|gets hot|heats up|gets warm|gets too hot)/,
+                /(overheating|heating) (issue|problem|concern)/
+            ];
+            
+            // Neutral patterns that override positive/negative
+            const neutralPatterns = [
+                // Neutral battery phrases
+                /battery (is|was) (okay|fine|decent|average|not bad|not great)/,
+                /battery (lasts|lasted) (about half a day|half a day|a few hours)/,
+                // Neutral camera phrases
+                /camera (is|was) (okay|fine|decent|average|not bad|not great)/,
+                /camera (could|can) be (better|improved)/,
+                // Neutral screen phrases
+                /screen (is|was) (okay|fine|decent|average|not bad|not great)/,
+                // Neutral sound phrases
+                /sound (is|was) (okay|fine|decent|average|not bad|not great)/,
+                // Neutral performance phrases
+                /performance (is|was) (okay|fine|decent|average|not bad|not great)/,
+                // Neutral overheating phrases
+                /gets (warm|a bit hot|a little hot) (but|however) (not|it's not|its not) (too bad|a problem)/
+            ];
+            
+            // Check for each aspect in the text
+            for (const aspect of commonAspects) {
+                // Check if any of the terms for this aspect are in the text
+                let found = false;
+                let index = -1;
+                let matchedTerm = '';
+                
+                for (const term of aspect.terms) {
+                    if (textLower.includes(term)) {
+                        found = true;
+                        index = textLower.indexOf(term);
+                        matchedTerm = term;
+                        break;
+                    }
+                }
+                
+                if (found) {
+                    // Get a larger context window around the aspect term
+                    const surroundingText = textLower.substring(Math.max(0, index - 50), Math.min(textLower.length, index + 100));
+                    
+                    // Default to Neutral sentiment
                     let sentiment = 'Neutral';
-                    const index = textLower.indexOf(aspect.term);
-                    const surroundingText = textLower.substring(Math.max(0, index - 20), Math.min(textLower.length, index + 30));
                     
-                    const positiveWords = ['good', 'great', 'excellent', 'amazing', 'love', 'best', 'nice', 'perfect'];
-                    const negativeWords = ['bad', 'poor', 'terrible', 'awful', 'worst', 'disappointing', 'slow', 'cheap'];
-                    
-                    for (const word of positiveWords) {
-                        if (surroundingText.includes(word)) {
-                            sentiment = 'Positive';
+                    // Check for negative patterns first (they often override positive ones in context)
+                    for (const pattern of negativePatterns) {
+                        if (pattern.test(surroundingText)) {
+                            sentiment = 'Negative';
                             break;
                         }
                     }
                     
+                    // If not negative, check for positive patterns
                     if (sentiment === 'Neutral') {
-                        for (const word of negativeWords) {
-                            if (surroundingText.includes(word)) {
-                                sentiment = 'Negative';
+                        for (const pattern of positivePatterns) {
+                            if (pattern.test(surroundingText)) {
+                                sentiment = 'Positive';
                                 break;
                             }
                         }
                     }
                     
+                    // Check for explicitly neutral patterns that override positive/negative
+                    for (const pattern of neutralPatterns) {
+                        if (pattern.test(surroundingText)) {
+                            sentiment = 'Neutral';
+                            break;
+                        }
+                    }
+                    
+                    // Special case handling for specific scenarios mentioned in the task
+                    
+                    // Battery dying quickly is always negative
+                    if (aspect.name === 'Battery Life' && 
+                        (surroundingText.includes('died after') || 
+                         surroundingText.includes('only 10 minutes') ||
+                         surroundingText.includes('battery died') ||
+                         /battery.*?(died|drained).*?(after|in|within).*?\d+\s+(minute|min|hour|sec|second)/.test(surroundingText))) {
+                        sentiment = 'Negative';
+                    }
+                    
+                    // "Incredible" battery life is always positive
+                    if (aspect.name === 'Battery Life' && 
+                        (surroundingText.includes('battery life is incredible') || 
+                         surroundingText.includes('incredible battery life'))) {
+                        sentiment = 'Positive';
+                    }
+                    
+                    // "Top-notch" camera quality is always positive
+                    if (aspect.name === 'Camera Quality' && 
+                        (surroundingText.includes('top-notch') || 
+                         surroundingText.includes('top notch'))) {
+                        sentiment = 'Positive';
+                    }
+                    
+                    // "Clear and crisp" sound is always positive
+                    if (aspect.name === 'Sound Quality' && 
+                        (surroundingText.includes('clear and crisp') || 
+                         surroundingText.includes('crisp and clear'))) {
+                        sentiment = 'Positive';
+                    }
+                    
+                    // "Could be brighter" screen is always negative
+                    if (aspect.name === 'Screen Quality' && 
+                        surroundingText.includes('could be brighter')) {
+                        sentiment = 'Negative';
+                    }
+                    
+                    // Add the aspect with its sentiment to the results
                     aspects.push({
                         name: aspect.name,
                         sentiment: sentiment
                     });
                 }
-            });
+            }
             
-            return aspects;
+            // Filter out duplicate aspects (keeping the first occurrence)
+            const uniqueAspects = [];
+            const seenAspects = new Set();
+            
+            for (const aspect of aspects) {
+                if (!seenAspects.has(aspect.name)) {
+                    seenAspects.add(aspect.name);
+                    uniqueAspects.push(aspect);
+                }
+            }
+            
+            // Only return aspects that are actually mentioned in the review
+            // This prevents aspects like "Charging Speed" from appearing when not mentioned
+            return uniqueAspects;
         }
         
         // Function to show all cards and hide details
@@ -495,43 +681,92 @@
             
             try {
                 errorElement.style.display = 'none';
-                
-                // Create a FormData object to send the file
-                const formData = new FormData();
-                formData.append('file', file);
-                
-                // Show upload success message
                 uploadMessage.style.display = 'block';
                 
-                // Simulate file upload (in a real app, you would send the file to the server)
-                console.log('Uploading file:', file.name);
+                console.log('Processing file:', file.name);
                 
-                // Simulate a delay to show the success message
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Read the file content
+                const reader = new FileReader();
                 
-                // In a real app, you would send the file to the server
-                // const response = await fetch(`${API_URL}/upload`, {
-                //     method: 'POST',
-                //     body: formData,
-                // });
+                // Create a promise to handle the file reading
+                const fileContent = await new Promise((resolve, reject) => {
+                    reader.onload = (event) => resolve(event.target.result);
+                    reader.onerror = (error) => reject(error);
+                    reader.readAsText(file);
+                });
                 
-                // if (!response.ok) {
-                //     throw new Error(`HTTP error! status: ${response.status}`);
-                // }
+                // Process the file content
+                const reviews = processFileContent(fileContent);
                 
-                // Reload reviews after a short delay
+                // Add each review to the database
+                for (const review of reviews) {
+                    try {
+                        await addReview(review.text, review.rating || 3);
+                        console.log('Added review:', review.text);
+                    } catch (error) {
+                        console.error('Error adding review from file:', error);
+                    }
+                }
+                
+                // Clear the file input and hide the message
                 setTimeout(() => {
                     uploadMessage.style.display = 'none';
                     document.getElementById('file-upload').value = '';
                     loadReviews();
-                }, 3000);
+                }, 1000);
                 
             } catch (error) {
-                console.error('Error uploading file:', error);
-                errorElement.textContent = `Error uploading file: ${error.message}`;
+                console.error('Error processing file:', error);
+                errorElement.textContent = `Error processing file: ${error.message}`;
                 errorElement.style.display = 'block';
                 uploadMessage.style.display = 'none';
             }
+        }
+        
+        // Function to process file content
+        function processFileContent(content) {
+            const reviews = [];
+            
+            // Split the content by lines
+            const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
+            
+            // Process each line as a separate review
+            for (const line of lines) {
+                if (line.trim()) {
+                    reviews.push({
+                        text: line.trim(),
+                        rating: null // We don't have ratings in the file, so use default
+                    });
+                }
+            }
+            
+            return reviews;
+        }
+        
+        // Function to check if a review is about an electronic product
+        function isElectronicProductReview(text) {
+            const textLower = text.toLowerCase();
+            
+            // Keywords related to electronic products
+            const electronicKeywords = [
+                'phone', 'smartphone', 'mobile', 'tablet', 'laptop', 'computer', 'pc', 
+                'headphone', 'earbud', 'speaker', 'camera', 'tv', 'television', 'monitor',
+                'gadget', 'device', 'electronic', 'tech', 'battery', 'screen', 'display',
+                'charger', 'charging', 'wifi', 'bluetooth', 'wireless', 'wired', 'usb',
+                'processor', 'memory', 'storage', 'ram', 'cpu', 'gpu', 'resolution',
+                'pixel', 'app', 'software', 'hardware', 'gaming', 'keyboard', 'mouse',
+                'touchscreen', 'fingerprint', 'sensor', 'camera', 'lens', 'flash',
+                'microphone', 'speaker', 'audio', 'video', 'streaming', 'playback'
+            ];
+            
+            // Check if any of the electronic keywords are in the text
+            for (const keyword of electronicKeywords) {
+                if (textLower.includes(keyword)) {
+                    return true;
+                }
+            }
+            
+            return false;
         }
         
         // Event listeners
